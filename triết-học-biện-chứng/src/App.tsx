@@ -1,14 +1,14 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Toaster, toast } from "sonner";
-import { 
-  BookOpen, 
-  MessageSquare, 
-  Send, 
-  X, 
-  ChevronRight, 
-  Layers, 
-  RefreshCw, 
+import {
+  BookOpen,
+  MessageSquare,
+  Send,
+  X,
+  ChevronRight,
+  Layers,
+  RefreshCw,
   Zap,
   ArrowRight,
   Info,
@@ -31,7 +31,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -41,7 +41,7 @@ import {
   DialogFooter
 } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
@@ -53,15 +53,15 @@ import {
 import { getChatResponse, generateImage } from "./lib/gemini";
 import { auth, db, googleProvider } from "./lib/firebase";
 import { signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, fetchSignInMethodsForEmail, sendPasswordResetEmail } from "firebase/auth";
-import { 
-  doc, 
-  getDoc, 
-  setDoc, 
-  collection, 
-  addDoc, 
-  query, 
-  orderBy, 
-  onSnapshot, 
+import {
+  doc,
+  getDoc,
+  setDoc,
+  collection,
+  addDoc,
+  query,
+  orderBy,
+  onSnapshot,
   serverTimestamp,
   Timestamp,
   limit
@@ -205,6 +205,50 @@ const FEATURE_IMAGES = {
   categories: "https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=1200&q=80"
 };
 
+const PhilosophicalParticles = ({ density = 20, className = "" }: { density?: number; className?: string }) => {
+  const particles = useMemo(() => {
+    return Array.from({ length: density }).map(() => ({
+      xInit: `${Math.random() * 100}%`,
+      yInit: `${Math.random() * 100}%`,
+      scaleInit: Math.random() * 0.5 + 0.5,
+      xAnim: `${Math.random() * 10 - 5}%`,
+      opacityMax: Math.random() * 0.4 + 0.2,
+      duration: Math.random() * 5 + 5,
+      delay: Math.random() * 3,
+    }));
+  }, [density]);
+
+  return (
+    <div className={`absolute inset-0 overflow-hidden pointer-events-none ${className}`}>
+      {particles.map((p, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-1.5 h-1.5 bg-primary/30 dark:bg-primary/50 rounded-full blur-[1px]"
+          initial={{
+            x: p.xInit,
+            y: p.yInit,
+            opacity: 0,
+            scale: p.scaleInit,
+          }}
+          animate={{
+            y: ["0%", "15%", "-15%", "0%"],
+            x: ["0%", p.xAnim, "0%"],
+            opacity: [0, p.opacityMax, 0],
+            scale: [0.8, 1.2, 0.8],
+          }}
+          transition={{
+            duration: p.duration,
+            repeat: Infinity,
+            ease: "easeInOut",
+            delay: p.delay,
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+// -------------------------------------------------------------------
+
 export default function App() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -234,7 +278,7 @@ export default function App() {
   const [newPhotoURL, setNewPhotoURL] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedPrinciple, setSelectedPrinciple] = useState<Principle | null>(null);
-  
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -305,7 +349,7 @@ export default function App() {
         text: doc.data().text,
         timestamp: doc.data().timestamp
       }));
-      
+
       if (history.length > 0) {
         setMessages(history);
       }
@@ -496,7 +540,7 @@ export default function App() {
   const uploadToCloudinary = async (dataUrl: string) => {
     const cloudName = (import.meta as any).env.VITE_CLOUDINARY_CLOUD_NAME;
     const uploadPreset = (import.meta as any).env.VITE_CLOUDINARY_UPLOAD_PRESET;
-    
+
     if (!cloudName || !uploadPreset) {
       throw new Error("Cloudinary configuration missing");
     }
@@ -529,7 +573,7 @@ export default function App() {
     console.log("Starting profile update...");
     try {
       let photoURL = newPhotoURL.trim() || profile?.photoURL || "";
-      
+
       // If newPhotoURL is a data URL (starts with data:image/), upload to Cloudinary
       if (photoURL.startsWith("data:image/")) {
         console.log("Uploading image to Cloudinary...");
@@ -629,7 +673,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
 
     const userMessage = inputValue.trim();
     const newMessage: Message = { role: "user", text: userMessage };
-    
+
     // If not logged in, just local state
     if (!user) {
       setMessages(prev => [...prev, newMessage]);
@@ -663,7 +707,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
         timestamp: serverTimestamp()
       });
     }
-    
+
     setIsLoading(false);
   };
 
@@ -673,7 +717,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
 
     setIsGeneratingImage(prev => ({ ...prev, [lawId]: true }));
     const url = await generateImage(law.imagePrompt);
-    
+
     if (url) {
       setLaws(prev => prev.map(l => l.id === lawId ? { ...l, imageUrl: url } : l));
     }
@@ -690,7 +734,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
             <BookOpen className="w-6 h-6 text-primary" />
             <span className="text-xl font-serif font-bold">Triết Học Biện Chứng</span>
           </div>
-          
+
           <div className="hidden md:flex items-center gap-6">
             <div className="flex items-center gap-6 mr-4 border-r pr-6">
               <a href="#overview" className="text-sm font-medium hover:text-primary transition-colors">Tổng quan</a>
@@ -698,7 +742,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
               <a href="#laws" className="text-sm font-medium hover:text-primary transition-colors">Quy luật</a>
               <a href="#categories" className="text-sm font-medium hover:text-primary transition-colors">Phạm trù</a>
             </div>
-            
+
             <div className="flex items-center gap-3">
               <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full w-9 h-9">
                 {theme === "light" ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
@@ -757,26 +801,45 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
 
       <main className="flex-1">
         {/* Hero Section */}
-        <section id="intro" className="relative pt-32 pb-24 overflow-hidden">
-          <div className="absolute inset-0 -z-10 bg-[radial-gradient(45%_40%_at_50%_50%,var(--color-primary)_0%,transparent_100%)] opacity-[0.03]" />
-          <div className="container mx-auto px-4">
+        <section
+          id="intro"
+          className="relative pt-32 pb-24 overflow-hidden z-10 bg-fixed bg-center bg-cover"
+          style={{ backgroundImage: 'url("/images/Section1.png")' }}
+        >
+          {/* LỚP PHỦ THÔNG MINH: 
+      - Light mode: bg-black/10 (phủ một lớp đen siêu mỏng 10% để ảnh giữ nguyên màu sắc gốc nhưng vẫn hỗ trợ đọc chữ)
+      - Dark mode: dark:bg-background/40 (phủ lớp tối hơn để hợp với giao diện đêm)
+  */}
+          <div className="absolute inset-0 bg-black/10 dark:bg-background/40 backdrop-blur-[0.5px] -z-10" />
+
+          {/* Giữ nguyên hiệu ứng hạt lá lơi nhưng giảm opacity để không lấn át ảnh nền */}
+          <PhilosophicalParticles density={25} className="-z-10 opacity-50" />
+
+          <div className="container mx-auto px-4 relative z-10">
             <div className="max-w-5xl mx-auto text-center">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
               >
-                <Badge variant="outline" className="mb-8 px-4 py-1 border-primary/20 text-primary font-medium tracking-wider uppercase text-[10px]">
+                {/* 1. Badge: Đổi text-primary thành text-white và border-primary thành border-white/40 */}
+                <Badge variant="outline" className="mb-8 px-4 py-1 border-white/40 text-white font-medium tracking-wider uppercase text-[10px] drop-shadow-sm">
                   Triết học Mác - Lênin
                 </Badge>
-                <h1 className="text-5xl md:text-7xl lg:text-8xl mb-8 leading-[0.9] tracking-tight font-serif italic">
+
+                {/* 2. Tiêu đề chính (h1): Thêm text-white và drop-shadow-lg */}
+                <h1 className="text-5xl md:text-7xl lg:text-8xl mb-8 leading-[0.9] tracking-tight font-serif italic text-white drop-shadow-lg">
                   Phép Biện Chứng <br className="hidden md:block" />
-                  <span className="text-primary not-italic">Duy Vật</span>
+                  {/* Duy Vật: Đổi text-primary thành text-white */}
+                  <span className="text-white not-italic">Duy Vật</span>
                 </h1>
-                <p className="text-xl md:text-2xl text-muted-foreground dark:text-zinc-400 max-w-3xl mx-auto mb-12 font-sans font-light leading-relaxed">
+
+                {/* 3. Đoạn mô tả (p): Đổi text-black thành text-white cố định */}
+                <p className="text-xl md:text-2xl text-white max-w-3xl mx-auto mb-12 font-sans font-medium leading-relaxed drop-shadow-xl">
                   Học thuyết khoa học nghiên cứu những quy luật chung nhất của sự vận động và phát triển của tự nhiên, xã hội và tư duy.
                 </p>
-                <div className="max-w-4xl mx-auto mb-12 overflow-hidden rounded-[2.5rem] border border-primary/10 bg-white/70 dark:bg-zinc-900/50 shadow-2xl shadow-primary/5 backdrop-blur-sm">
+
+                <div className="max-w-4xl mx-auto mb-12 overflow-hidden rounded-[2.5rem] border border-white/20 bg-white/10 dark:bg-zinc-900/50 shadow-2xl backdrop-blur-sm">
                   <img
                     src={FEATURE_IMAGES.hero}
                     alt="Không gian học tập triết học"
@@ -784,8 +847,8 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
                   />
                 </div>
                 <div className="flex flex-wrap justify-center gap-6">
-                  <a 
-                    href="#overview" 
+                  <a
+                    href="#overview"
                     className={cn(buttonVariants({ size: "lg", variant: "default" }), "rounded-full px-10 h-14 text-base shadow-lg shadow-primary/20 flex items-center justify-center")}
                   >
                     Bắt đầu tìm hiểu <ArrowRight className="ml-2 w-5 h-5" />
@@ -799,8 +862,15 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
           </div>
         </section>
         {/* Overview Section */}
-        <section id="overview" className="py-24 bg-white dark:bg-zinc-950">
-          <div className="container mx-auto px-4">
+        <section
+          id="overview"
+          className="py-24 relative z-10 bg-center bg-cover"
+          style={{ backgroundImage: 'url("/images/Section2.png")' }}
+        >
+          {/* Lớp phủ chuyển sắc từ trên xuống dưới */}
+          <div className="absolute inset-0 bg-gradient-to-b from-white/90 to-white/70 dark:from-zinc-950/90 dark:to-zinc-950/80 backdrop-blur-md -z-10" />
+
+          <div className="container mx-auto px-4 relative z-10">
             <div className="grid md:grid-cols-2 gap-16 items-center max-w-6xl mx-auto">
               <div>
                 <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/20 border-none rounded-full px-4">Tổng quan</Badge>
@@ -913,7 +983,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
                     }
                   />
                   <DialogContent className="sm:max-w-[650px] rounded-[3rem] p-0 overflow-hidden border-none bg-transparent shadow-none">
-                    <motion.div 
+                    <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="bg-white dark:bg-zinc-950 p-6 md:p-12 rounded-[3rem] border border-primary/10 shadow-2xl max-h-[90vh] overflow-y-auto"
@@ -954,8 +1024,8 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
                       </div>
 
                       <DialogFooter className="mt-10">
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           className="rounded-full px-8 h-12 border-primary/20 hover:bg-primary/5"
                           onClick={() => {
                             const closeButton = document.querySelector('[data-radix-collection-item]') as HTMLElement;
@@ -972,8 +1042,15 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
             </div>
           </div>
         </section>
-        <section id="laws" className="py-32 bg-secondary/30 dark:bg-zinc-900/50">
-          <div className="container mx-auto px-4">
+        <section
+          id="laws"
+          className="py-32 relative z-10 bg-fixed bg-center bg-cover"
+          style={{ backgroundImage: 'url("/images/Section3.png")' }}
+        >
+          {/* Lớp phủ màu đậm và làm mờ sâu */}
+          <div className="absolute inset-0 bg-secondary/80 dark:bg-zinc-900/90 backdrop-blur-lg -z-10" />
+
+          <div className="container mx-auto px-4 relative z-10">
             <div className="text-center mb-20">
               <h2 className="text-4xl md:text-5xl mb-6 font-serif italic">Hệ thống Quy luật</h2>
               <div className="w-20 h-1 bg-primary mx-auto mb-6 rounded-full" />
@@ -985,9 +1062,9 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
             <Tabs defaultValue="law1" className="w-full max-w-6xl mx-auto">
               <TabsList className="flex flex-wrap md:grid w-full md:grid-cols-3 h-auto p-2 bg-white/50 dark:bg-zinc-800/50 backdrop-blur-sm border border-primary/10 rounded-2xl mb-12">
                 {laws.map((law) => (
-                  <TabsTrigger 
-                    key={law.id} 
-                    value={law.id} 
+                  <TabsTrigger
+                    key={law.id}
+                    value={law.id}
                     className="flex-1 py-4 text-muted-foreground data-[state=active]:bg-white dark:data-[state=active]:bg-zinc-800 data-[state=active]:text-primary data-[state=active]:shadow-xl data-[state=active]:shadow-primary/5 rounded-xl transition-all duration-300"
                   >
                     <span className="text-sm md:text-base font-bold tracking-tight">{law.shortTitle}</span>
@@ -1008,21 +1085,21 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
                       </div>
                       <h3 className="text-3xl mb-4 font-serif leading-tight">{law.title}</h3>
                       <p className="text-base text-accent font-medium italic mb-10 opacity-80">{law.subtitle}</p>
-                      
+
                       {/* AI Image Generation Area */}
                       <div className="w-full mt-auto">
                         <div className="aspect-[4/3] w-full rounded-3xl bg-secondary/50 border border-dashed border-primary/20 flex flex-col items-center justify-center overflow-hidden relative group shadow-inner">
                           {law.imageUrl ? (
                             <>
-                              <img 
-                                src={law.imageUrl} 
-                                alt={law.title} 
+                              <img
+                                src={law.imageUrl}
+                                alt={law.title}
                                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                                 referrerPolicy="no-referrer"
                               />
                               <div className="absolute inset-0 bg-primary/60 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center backdrop-blur-[2px]">
-                                <Button 
-                                  variant="secondary" 
+                                <Button
+                                  variant="secondary"
                                   className="rounded-full px-6 shadow-xl"
                                   onClick={() => handleGenerateImage(law.id)}
                                   disabled={isGeneratingImage[law.id]}
@@ -1037,8 +1114,8 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
                                 <Zap className="w-6 h-6 text-primary/40" />
                               </div>
                               <p className="text-xs text-muted-foreground mb-6 font-medium">Chưa có hình ảnh minh họa AI</p>
-                              <Button 
-                                variant="outline" 
+                              <Button
+                                variant="outline"
                                 className="rounded-full border-primary/20 hover:bg-primary/5"
                                 onClick={() => handleGenerateImage(law.id)}
                                 disabled={isGeneratingImage[law.id]}
@@ -1057,9 +1134,9 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
                       <div className="prose prose-slate dark:prose-invert max-w-none text-zinc-800 dark:text-zinc-200 leading-relaxed font-sans text-lg">
                         <ReactMarkdown>{law.content}</ReactMarkdown>
                       </div>
-                      
+
                       <Separator className="my-10 opacity-50" />
-                      
+
                       <div className="p-8 bg-accent/5 dark:bg-accent/10 rounded-3xl border border-accent/10 relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-4 opacity-10">
                           <BookOpen className="w-12 h-12 text-accent" />
@@ -1081,8 +1158,15 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
         </section>
 
         {/* Categories Section */}
-        <section id="categories" className="py-32 bg-white dark:bg-zinc-950 overflow-hidden">
-          <div className="container mx-auto px-4">
+        <section
+          id="categories"
+          className="py-32 relative z-10 bg-center bg-cover overflow-hidden"
+          style={{ backgroundImage: 'url("/images/Section4.png")' }}
+        >
+          {/* Lớp kính mờ mạnh nhất (backdrop-blur-xl) */}
+          <div className="absolute inset-0 bg-white/70 dark:bg-zinc-950/80 backdrop-blur-xl -z-10" />
+
+          <div className="container mx-auto px-4 relative z-10">
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
               <div className="max-w-2xl">
                 <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/20 border-none rounded-full px-4">Phạm trù</Badge>
@@ -1124,7 +1208,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
                         <span className="text-lg md:text-xl font-serif italic text-center group-hover:text-white transition-colors">
                           {cat.title}
                         </span>
-                        
+
                         {/* Decorative elements */}
                         <div className="absolute top-4 right-6 opacity-0 group-hover:opacity-100 transition-opacity">
                           <ArrowRight className="w-5 h-5 text-white" />
@@ -1133,7 +1217,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
                     }
                   />
                   <DialogContent className="sm:max-w-[600px] rounded-[3rem] p-0 overflow-hidden border-none bg-transparent shadow-none">
-                    <motion.div 
+                    <motion.div
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       className="bg-white dark:bg-zinc-950 p-6 md:p-12 rounded-[3rem] border border-primary/10 shadow-2xl max-h-[90vh] overflow-y-auto"
@@ -1182,8 +1266,8 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
                       </div>
 
                       <DialogFooter className="mt-10">
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           className="rounded-full px-8 h-12 border-primary/20 hover:bg-primary/5"
                           onClick={() => {
                             const closeButton = document.querySelector('[data-radix-collection-item]') as HTMLElement;
@@ -1262,8 +1346,8 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
       </footer>
 
       {/* Chatbot Toggle Button */}
-      <Button 
-        size="lg" 
+      <Button
+        size="lg"
         className="fixed bottom-6 right-6 h-14 px-6 rounded-full shadow-[0_0_20px_rgba(230,81,0,0.5)] z-50 bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white flex items-center gap-2 transition-all duration-300 hover:scale-105 animate-pulse"
         onClick={() => setIsChatOpen(true)}
       >
@@ -1317,11 +1401,10 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
               <div className="space-y-6">
                 {messages.map((msg, idx) => (
                   <div key={idx} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                    <div className={`max-w-[85%] p-4 rounded-[1.5rem] text-sm leading-relaxed ${
-                      msg.role === "user" 
-                        ? "bg-primary text-white rounded-tr-none shadow-lg shadow-primary/20" 
-                        : "bg-white dark:bg-card text-foreground rounded-tl-none shadow-sm border border-primary/5"
-                    }`}>
+                    <div className={`max-w-[85%] p-4 rounded-[1.5rem] text-sm leading-relaxed ${msg.role === "user"
+                      ? "bg-primary text-white dark:text-zinc-950 rounded-tr-none shadow-lg shadow-primary/20"
+                      : "bg-white dark:bg-card text-foreground rounded-tl-none shadow-sm border border-primary/5"
+                      }`}>
                       <div className={cn("prose prose-sm max-w-none", msg.role === "user" ? "prose-invert" : "prose-slate dark:prose-invert")}>
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                           {msg.text}
@@ -1344,15 +1427,15 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
             </div>
 
             <div className="p-6 bg-white dark:bg-zinc-950 border-t border-primary/5">
-              <form 
-                className="flex gap-3" 
+              <form
+                className="flex gap-3"
                 onSubmit={(e) => {
                   e.preventDefault();
                   handleSendMessage();
                 }}
               >
-                <Input 
-                  placeholder="Nhập câu hỏi cho chatbot" 
+                <Input
+                  placeholder="Nhập câu hỏi cho chatbot"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   className="flex-1 h-12 rounded-full px-6 bg-secondary/20 dark:bg-zinc-900 border-transparent focus-visible:ring-primary/20 focus-visible:border-primary/20 transition-all"
@@ -1386,11 +1469,11 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
                 </Avatar>
                 <label className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
                   <Camera className="w-6 h-6 text-white" />
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    capture="environment" 
-                    className="hidden" 
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    className="hidden"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (file) {
@@ -1446,7 +1529,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
               {authMode === "login" ? "Đăng nhập để tiếp tục hành trình triết học" : "Tạo tài khoản để lưu trữ lịch sử trò chuyện"}
             </p>
           </div>
-          
+
           <div className="p-8 bg-white dark:bg-zinc-950">
             <form onSubmit={handleEmailAuth} className="space-y-4">
               {authMode === "register" && (
@@ -1461,7 +1544,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
                   />
                 </div>
               )}
-              
+
               <div className="space-y-1">
                 <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Email</label>
                 <Input
@@ -1473,7 +1556,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
                   required
                 />
               </div>
-              
+
               <div className="space-y-1">
                 <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Mật khẩu</label>
                 <Input
@@ -1485,7 +1568,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
                   required
                 />
               </div>
-              
+
               {authMode === "register" && (
                 <div className="space-y-1">
                   <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground ml-1">Xác nhận mật khẩu</label>
@@ -1529,8 +1612,8 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
               </div>
             </div>
 
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={handleGoogleLogin}
               disabled={isAuthSubmitting}
               className="w-full h-12 rounded-xl border-secondary dark:border-zinc-800 hover:bg-secondary/10 flex items-center justify-center gap-3 font-medium"
@@ -1560,7 +1643,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
               {authMode === "login" ? (
                 <>
                   Chưa có tài khoản?{" "}
-                  <button 
+                  <button
                     onClick={() => { setAuthMode("register"); setAuthError(""); }}
                     className="text-primary font-bold hover:underline"
                   >
@@ -1570,7 +1653,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
               ) : (
                 <>
                   Đã có tài khoản?{" "}
-                  <button 
+                  <button
                     onClick={() => { setAuthMode("login"); setAuthError(""); }}
                     className="text-primary font-bold hover:underline"
                   >
