@@ -52,7 +52,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { getChatResponse, generateImage } from "./lib/gemini";
 import { auth, db, googleProvider } from "./lib/firebase";
-import { signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, fetchSignInMethodsForEmail, sendPasswordResetEmail } from "firebase/auth";
 import { 
   doc, 
   getDoc, 
@@ -198,6 +198,13 @@ const CATEGORIES: Category[] = [
   }
 ];
 
+const FEATURE_IMAGES = {
+  hero: "https://images.unsplash.com/photo-1516979187457-637abb4f9353?auto=format&fit=crop&w=1400&q=80",
+  overview: "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=1200&q=80",
+  principles: "https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=1200&q=80",
+  categories: "https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=1200&q=80"
+};
+
 export default function App() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -222,6 +229,7 @@ export default function App() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [registerName, setRegisterName] = useState("");
   const [authError, setAuthError] = useState("");
+  const [isAuthSubmitting, setIsAuthSubmitting] = useState(false);
   const [newDisplayName, setNewDisplayName] = useState("");
   const [newPhotoURL, setNewPhotoURL] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
@@ -266,8 +274,11 @@ export default function App() {
           };
           await setDoc(doc(db, "users", currentUser.uid), {
             ...initialProfile,
-            updatedAt: serverTimestamp()
-          });
+            email: currentUser.email || "",
+            provider: currentUser.providerData?.[0]?.providerId || "unknown",
+            updatedAt: serverTimestamp(),
+            createdAt: serverTimestamp()
+          }, { merge: true });
           setProfile(initialProfile);
         }
       } else {
@@ -303,26 +314,76 @@ export default function App() {
     return () => unsubscribe();
   }, [user]);
 
-  const handleLogin = () => {
-    setIsAuthDialogOpen(true);
-    setAuthMode("login");
+  const resetAuthForm = () => {
+    setEmail("");
+    setPassword("");
+    setConfirmPassword("");
+    setRegisterName("");
     setAuthError("");
   };
 
+  const getReadableAuthError = (error: any, mode: "login" | "register") => {
+    const code = error?.code;
+    switch (code) {
+      case "auth/email-already-in-use":
+        return "Email này đã được sử dụng. Hãy đăng nhập hoặc dùng Google nếu bạn đã đăng ký bằng Google.";
+      case "auth/account-exists-with-different-credential":
+        return "Email này đã tồn tại với phương thức đăng nhập khác. Hãy dùng đúng phương thức trước đó.";
+      case "auth/invalid-credential":
+      case "auth/wrong-password":
+      case "auth/user-not-found":
+      case "auth/invalid-login-credentials":
+        return "Email hoặc mật khẩu không chính xác.";
+      case "auth/popup-closed-by-user":
+        return "Bạn đã đóng cửa sổ đăng nhập Google.";
+      case "auth/too-many-requests":
+        return "Bạn thao tác quá nhiều lần. Vui lòng thử lại sau ít phút.";
+      case "auth/invalid-email":
+        return "Email không hợp lệ.";
+      case "auth/weak-password":
+        return "Mật khẩu quá yếu. Hãy dùng ít nhất 6 ký tự.";
+      default:
+        return mode === "register"
+          ? "Đăng ký thất bại. Vui lòng thử lại."
+          : "Đăng nhập thất bại. Vui lòng thử lại.";
+    }
+  };
+
+  const handleLogin = () => {
+    resetAuthForm();
+    setIsAuthDialogOpen(true);
+    setAuthMode("login");
+  };
+
   const handleGoogleLogin = async () => {
+    setAuthError("");
+    setIsAuthSubmitting(true);
     try {
       await signInWithPopup(auth, googleProvider);
       setIsAuthDialogOpen(false);
+      resetAuthForm();
       toast.success("Đăng nhập thành công!");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Google login failed", error);
-      setAuthError("Đăng nhập Google thất bại.");
+      if (error?.code === "auth/account-exists-with-different-credential") {
+        setAuthError("Email này đã đăng ký bằng mật khẩu. Hãy đăng nhập bằng email và mật khẩu trước.");
+      } else {
+        setAuthError(getReadableAuthError(error, "login"));
+      }
+    } finally {
+      setIsAuthSubmitting(false);
     }
   };
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    const normalizedEmail = email.trim().toLowerCase();
     setAuthError("");
+
+    if (!normalizedEmail) {
+      setAuthError("Vui lòng nhập email.");
+      return;
+    }
 
     if (authMode === "register") {
       if (password !== confirmPassword) {
@@ -337,40 +398,87 @@ export default function App() {
         setAuthError("Vui lòng nhập tên của bạn.");
         return;
       }
+    }
 
-      try {
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    setIsAuthSubmitting(true);
+
+    try {
+      const signInMethods = await fetchSignInMethodsForEmail(auth, normalizedEmail);
+
+      if (authMode === "register") {
+        if (signInMethods.includes("google.com") && !signInMethods.includes("password")) {
+          setAuthError("Email này đã được dùng để đăng nhập bằng Google. Bạn không thể đăng ký mật khẩu mới cho email này ở đây. Hãy dùng nút Google để đăng nhập.");
+          return;
+        }
+
+        if (signInMethods.includes("password")) {
+          setAuthError("Email này đã có tài khoản. Hãy đăng nhập thay vì đăng ký mới.");
+          return;
+        }
+
+        const userCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
         await updateProfile(userCredential.user, {
           displayName: registerName.trim()
         });
-        
-        // Create initial profile in Firestore
+
         await setDoc(doc(db, "users", userCredential.user.uid), {
           displayName: registerName.trim(),
           photoURL: "",
-          email: email,
-          createdAt: serverTimestamp()
-        });
-        
+          email: normalizedEmail,
+          provider: "password",
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+
         setIsAuthDialogOpen(false);
+        resetAuthForm();
         toast.success("Đăng ký thành công!");
-      } catch (error: any) {
-        console.error("Registration failed", error);
-        if (error.code === "auth/email-already-in-use") {
-          setAuthError("Email này đã được sử dụng.");
-        } else {
-          setAuthError("Đăng ký thất bại. Vui lòng thử lại.");
-        }
+        return;
       }
-    } else {
-      try {
-        await signInWithEmailAndPassword(auth, email, password);
-        setIsAuthDialogOpen(false);
-        toast.success("Đăng nhập thành công!");
-      } catch (error: any) {
-        console.error("Login failed", error);
-        setAuthError("Email hoặc mật khẩu không chính xác.");
+
+      if (signInMethods.includes("google.com") && !signInMethods.includes("password")) {
+        setAuthError("Email này đang dùng để đăng nhập bằng Google. Hãy bấm nút 'Tiếp tục với Google'.");
+        return;
       }
+
+      if (signInMethods.length === 0) {
+        setAuthError("Email này chưa có tài khoản. Bạn hãy đăng ký trước.");
+        return;
+      }
+
+      await signInWithEmailAndPassword(auth, normalizedEmail, password);
+      setIsAuthDialogOpen(false);
+      resetAuthForm();
+      toast.success("Đăng nhập thành công!");
+    } catch (error: any) {
+      console.error(`${authMode} failed`, error);
+      setAuthError(getReadableAuthError(error, authMode));
+    } finally {
+      setIsAuthSubmitting(false);
+    }
+  };
+
+
+  const handleForgotPassword = async () => {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!normalizedEmail) {
+      setAuthError("Hãy nhập email trước khi yêu cầu đặt lại mật khẩu.");
+      return;
+    }
+
+    try {
+      const signInMethods = await fetchSignInMethodsForEmail(auth, normalizedEmail);
+      if (signInMethods.includes("google.com") && !signInMethods.includes("password")) {
+        setAuthError("Email này đang dùng Google để đăng nhập nên không thể đặt lại mật khẩu tại đây.");
+        return;
+      }
+
+      await sendPasswordResetEmail(auth, normalizedEmail);
+      toast.success("Đã gửi email đặt lại mật khẩu.");
+    } catch (error: any) {
+      console.error("Reset password failed", error);
+      setAuthError(getReadableAuthError(error, "login"));
     }
   };
 
@@ -668,6 +776,13 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
                 <p className="text-xl md:text-2xl text-muted-foreground dark:text-zinc-400 max-w-3xl mx-auto mb-12 font-sans font-light leading-relaxed">
                   Học thuyết khoa học nghiên cứu những quy luật chung nhất của sự vận động và phát triển của tự nhiên, xã hội và tư duy.
                 </p>
+                <div className="max-w-4xl mx-auto mb-12 overflow-hidden rounded-[2.5rem] border border-primary/10 bg-white/70 dark:bg-zinc-900/50 shadow-2xl shadow-primary/5 backdrop-blur-sm">
+                  <img
+                    src={FEATURE_IMAGES.hero}
+                    alt="Không gian học tập triết học"
+                    className="h-[260px] md:h-[360px] w-full object-cover"
+                  />
+                </div>
                 <div className="flex flex-wrap justify-center gap-6">
                   <a 
                     href="#overview" 
@@ -728,6 +843,9 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
               <div className="relative">
                 <div className="absolute -inset-4 bg-primary/5 rounded-[3rem] blur-2xl" />
                 <div className="relative bg-secondary/20 dark:bg-zinc-900/50 border border-primary/5 p-10 rounded-[3rem] backdrop-blur-sm">
+                  <div className="mb-8 overflow-hidden rounded-[2rem] border border-primary/10">
+                    <img src={FEATURE_IMAGES.overview} alt="Sách và ghi chú học tập" className="h-56 w-full object-cover" />
+                  </div>
                   <h4 className="text-2xl font-serif italic mb-6">Cấu trúc nội dung cốt lõi</h4>
                   <div className="grid grid-cols-1 gap-4">
                     <div className="flex items-center justify-between p-4 bg-white dark:bg-zinc-800 rounded-2xl shadow-sm">
@@ -760,6 +878,10 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
                   "Nguyên lý" được hiểu như các tiên đề trong khoa học cụ thể, là những tri thức không dễ chứng minh nhưng đã được xác nhận bởi thực tiễn của nhiều thế hệ con người, đòi hỏi con người phải tuân thủ nghiêm ngặt để không mắc sai lầm.
                 </p>
               </div>
+            </div>
+
+            <div className="max-w-5xl mx-auto mb-10 overflow-hidden rounded-[2.5rem] border border-primary/10 bg-white dark:bg-zinc-900 shadow-xl shadow-primary/5">
+              <img src={FEATURE_IMAGES.principles} alt="Không gian thư viện và tri thức" className="h-56 md:h-72 w-full object-cover" />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
@@ -973,6 +1095,10 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
                 <div className="text-8xl font-serif italic opacity-5 text-primary leading-none">06</div>
                 <div className="text-sm font-mono uppercase tracking-widest opacity-40">Interactive Categories</div>
               </div>
+            </div>
+
+            <div className="max-w-5xl mx-auto mb-10 overflow-hidden rounded-[2.5rem] border border-primary/10 bg-secondary/10 dark:bg-zinc-900/50 shadow-xl shadow-primary/5">
+              <img src={FEATURE_IMAGES.categories} alt="Bút viết và tri thức" className="h-56 md:h-72 w-full object-cover" />
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8 max-w-5xl mx-auto">
@@ -1310,7 +1436,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
       </Dialog>
 
       {/* Authentication Dialog */}
-      <Dialog open={isAuthDialogOpen} onOpenChange={setIsAuthDialogOpen}>
+      <Dialog open={isAuthDialogOpen} onOpenChange={(open) => { setIsAuthDialogOpen(open); if (!open) resetAuthForm(); }}>
         <DialogContent className="sm:max-w-[400px] rounded-[2rem] p-0 overflow-hidden border-none shadow-2xl">
           <div className="bg-primary p-8 text-white text-center">
             <h2 className="text-3xl font-serif italic mb-2">
@@ -1380,9 +1506,18 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
                 </p>
               )}
 
-              <Button type="submit" className="w-full h-12 rounded-xl text-base font-bold shadow-lg shadow-primary/20">
-                {authMode === "login" ? "Đăng nhập" : "Đăng ký"}
+              <Button type="submit" disabled={isAuthSubmitting} className="w-full h-12 rounded-xl text-base font-bold shadow-lg shadow-primary/20">
+                {isAuthSubmitting ? "Đang xử lý..." : authMode === "login" ? "Đăng nhập" : "Đăng ký"}
               </Button>
+              {authMode === "login" && (
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="w-full text-right text-xs font-medium text-primary hover:underline"
+                >
+                  Quên mật khẩu?
+                </button>
+              )}
             </form>
 
             <div className="relative my-8">
@@ -1397,6 +1532,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
             <Button 
               variant="outline" 
               onClick={handleGoogleLogin}
+              disabled={isAuthSubmitting}
               className="w-full h-12 rounded-xl border-secondary dark:border-zinc-800 hover:bg-secondary/10 flex items-center justify-center gap-3 font-medium"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -1425,7 +1561,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
                 <>
                   Chưa có tài khoản?{" "}
                   <button 
-                    onClick={() => setAuthMode("register")}
+                    onClick={() => { setAuthMode("register"); setAuthError(""); }}
                     className="text-primary font-bold hover:underline"
                   >
                     Đăng ký ngay
@@ -1435,7 +1571,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
                 <>
                   Đã có tài khoản?{" "}
                   <button 
-                    onClick={() => setAuthMode("login")}
+                    onClick={() => { setAuthMode("login"); setAuthError(""); }}
                     className="text-primary font-bold hover:underline"
                   >
                     Đăng nhập
