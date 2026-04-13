@@ -51,21 +51,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getChatResponse, generateImage } from "./lib/gemini";
-import { auth, db, googleProvider } from "./lib/firebase";
-import { signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, fetchSignInMethodsForEmail, sendPasswordResetEmail } from "firebase/auth";
-import {
-  doc,
-  getDoc,
-  setDoc,
-  collection,
-  addDoc,
-  query,
-  orderBy,
-  onSnapshot,
-  serverTimestamp,
-  Timestamp,
-  limit
-} from "firebase/firestore";
+import { auth, googleProvider } from "./lib/firebase";
+import { signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, sendPasswordResetEmail } from "firebase/auth";
 
 interface Message {
   role: "user" | "model";
@@ -85,7 +72,7 @@ interface Law {
   subtitle: string;
   icon: React.ReactNode;
   content: string;
-  example: string;
+  example: string
   imagePrompt: string;
   imageUrl?: string;
 }
@@ -278,8 +265,50 @@ export default function App() {
   const [newPhotoURL, setNewPhotoURL] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
   const [selectedPrinciple, setSelectedPrinciple] = useState<Principle | null>(null);
+  const [isCloudChatEnabled, setIsCloudChatEnabled] = useState(true);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const getLocalProfileKey = (uid: string) => `thbc_profile_${uid}`;
+  const getLocalMessagesKey = (uid: string) => `thbc_messages_${uid}`;
+
+  const loadLocalProfile = (currentUser: FirebaseUser): UserProfile => {
+    try {
+      const raw = localStorage.getItem(getLocalProfileKey(currentUser.uid));
+      const saved = raw ? JSON.parse(raw) : {};
+      return {
+        displayName: saved.displayName || currentUser.displayName || "Người dùng",
+        photoURL: saved.photoURL || currentUser.photoURL || ""
+      };
+    } catch {
+      return {
+        displayName: currentUser.displayName || "Người dùng",
+        photoURL: currentUser.photoURL || ""
+      };
+    }
+  };
+
+  const saveLocalProfile = (uid: string, nextProfile: UserProfile) => {
+    localStorage.setItem(getLocalProfileKey(uid), JSON.stringify(nextProfile));
+  };
+
+  const getDefaultWelcomeMessage = (): Message[] => ([
+    { role: "model", text: "Xin chào! Tôi là trợ lý ảo chuyên về Phép biện chứng duy vật. Bạn muốn tìm hiểu về quy luật nào hôm nay?" }
+  ]);
+
+  const loadLocalMessages = (uid: string): Message[] => {
+    try {
+      const raw = localStorage.getItem(getLocalMessagesKey(uid));
+      const saved = raw ? JSON.parse(raw) : [];
+      return Array.isArray(saved) && saved.length > 0 ? saved : getDefaultWelcomeMessage();
+    } catch {
+      return getDefaultWelcomeMessage();
+    }
+  };
+
+  const saveLocalMessages = (uid: string, nextMessages: Message[]) => {
+    localStorage.setItem(getLocalMessagesKey(uid), JSON.stringify(nextMessages));
+  };
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -306,57 +335,23 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
-      if (currentUser) {
-        // Fetch or create profile
-        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-        if (userDoc.exists()) {
-          setProfile(userDoc.data() as UserProfile);
-        } else {
-          const initialProfile = {
-            displayName: currentUser.displayName || "Người dùng",
-            photoURL: currentUser.photoURL || ""
-          };
-          await setDoc(doc(db, "users", currentUser.uid), {
-            ...initialProfile,
-            email: currentUser.email || "",
-            provider: currentUser.providerData?.[0]?.providerId || "unknown",
-            updatedAt: serverTimestamp(),
-            createdAt: serverTimestamp()
-          }, { merge: true });
-          setProfile(initialProfile);
-        }
-      } else {
+
+      if (!currentUser) {
         setProfile(null);
-        setMessages([{ role: "model", text: "Xin chào! Tôi là trợ lý ảo chuyên về Phép biện chứng duy vật. Bạn muốn tìm hiểu về quy luật nào hôm nay?" }]);
+        setIsCloudChatEnabled(false);
+        setMessages(getDefaultWelcomeMessage());
+        return;
       }
+
+      const localProfile = loadLocalProfile(currentUser);
+      setProfile(localProfile);
+      saveLocalProfile(currentUser.uid, localProfile);
+      setIsCloudChatEnabled(false);
+      setMessages(loadLocalMessages(currentUser.uid));
     });
     return () => unsubscribe();
   }, []);
 
-  // Chat History Listener
-  useEffect(() => {
-    if (!user) return;
-
-    const q = query(
-      collection(db, "users", user.uid, "messages"),
-      orderBy("timestamp", "asc"),
-      limit(50)
-    );
-
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const history: Message[] = snapshot.docs.map(doc => ({
-        role: doc.data().role,
-        text: doc.data().text,
-        timestamp: doc.data().timestamp
-      }));
-
-      if (history.length > 0) {
-        setMessages(history);
-      }
-    });
-
-    return () => unsubscribe();
-  }, [user]);
 
   const resetAuthForm = () => {
     setEmail("");
@@ -386,6 +381,10 @@ export default function App() {
         return "Email không hợp lệ.";
       case "auth/weak-password":
         return "Mật khẩu quá yếu. Hãy dùng ít nhất 6 ký tự.";
+      case "auth/operation-not-allowed":
+        return mode === "register"
+          ? "Email/Password chưa được bật trong Firebase Authentication."
+          : "Phương thức đăng nhập này chưa được bật trong Firebase Authentication.";
       default:
         return mode === "register"
           ? "Đăng ký thất bại. Vui lòng thử lại."
@@ -447,46 +446,23 @@ export default function App() {
     setIsAuthSubmitting(true);
 
     try {
-      const signInMethods = await fetchSignInMethodsForEmail(auth, normalizedEmail);
-
       if (authMode === "register") {
-        if (signInMethods.includes("google.com") && !signInMethods.includes("password")) {
-          setAuthError("Email này đã được dùng để đăng nhập bằng Google. Bạn không thể đăng ký mật khẩu mới cho email này ở đây. Hãy dùng nút Google để đăng nhập.");
-          return;
-        }
-
-        if (signInMethods.includes("password")) {
-          setAuthError("Email này đã có tài khoản. Hãy đăng nhập thay vì đăng ký mới.");
-          return;
-        }
-
         const userCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
         await updateProfile(userCredential.user, {
           displayName: registerName.trim()
         });
 
-        await setDoc(doc(db, "users", userCredential.user.uid), {
+        const nextProfile = {
           displayName: registerName.trim(),
-          photoURL: "",
-          email: normalizedEmail,
-          provider: "password",
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp()
-        }, { merge: true });
+          photoURL: userCredential.user.photoURL || ""
+        };
+
+        saveLocalProfile(userCredential.user.uid, nextProfile);
+        setProfile(nextProfile);
 
         setIsAuthDialogOpen(false);
         resetAuthForm();
         toast.success("Đăng ký thành công!");
-        return;
-      }
-
-      if (signInMethods.includes("google.com") && !signInMethods.includes("password")) {
-        setAuthError("Email này đang dùng để đăng nhập bằng Google. Hãy bấm nút 'Tiếp tục với Google'.");
-        return;
-      }
-
-      if (signInMethods.length === 0) {
-        setAuthError("Email này chưa có tài khoản. Bạn hãy đăng ký trước.");
         return;
       }
 
@@ -512,12 +488,6 @@ export default function App() {
     }
 
     try {
-      const signInMethods = await fetchSignInMethodsForEmail(auth, normalizedEmail);
-      if (signInMethods.includes("google.com") && !signInMethods.includes("password")) {
-        setAuthError("Email này đang dùng Google để đăng nhập nên không thể đặt lại mật khẩu tại đây.");
-        return;
-      }
-
       await sendPasswordResetEmail(auth, normalizedEmail);
       toast.success("Đã gửi email đặt lại mật khẩu.");
     } catch (error: any) {
@@ -570,27 +540,20 @@ export default function App() {
   const handleUpdateProfile = async () => {
     if (!user || !newDisplayName.trim()) return;
     setIsUpdatingProfile(true);
-    console.log("Starting profile update...");
     try {
       let photoURL = newPhotoURL.trim() || profile?.photoURL || "";
 
-      // If newPhotoURL is a data URL (starts with data:image/), upload to Cloudinary
       if (photoURL.startsWith("data:image/")) {
-        console.log("Uploading image to Cloudinary...");
         photoURL = await uploadToCloudinary(photoURL);
-        console.log("Got Cloudinary URL:", photoURL);
       }
 
       const updatedProfile = {
         displayName: newDisplayName.trim(),
-        photoURL: photoURL
+        photoURL
       };
-      console.log("Updating Firestore...");
-      await setDoc(doc(db, "users", user.uid), {
-        ...updatedProfile,
-        updatedAt: serverTimestamp()
-      }, { merge: true });
-      console.log("Firestore updated.");
+
+      await updateProfile(user, updatedProfile);
+      saveLocalProfile(user.uid, updatedProfile);
       setProfile(updatedProfile);
       setIsProfileDialogOpen(false);
       toast.success("Cập nhật hồ sơ thành công!");
@@ -599,7 +562,6 @@ export default function App() {
       toast.error("Cập nhật hồ sơ thất bại.");
     } finally {
       setIsUpdatingProfile(false);
-      console.log("Profile update finished.");
     }
   };
 
@@ -668,47 +630,49 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
     scrollToBottom();
   }, [messages]);
 
+  const appendLocalMessage = (message: Message) => {
+    setMessages(prev => {
+      const next = [...prev, message];
+      if (user) {
+        saveLocalMessages(user.uid, next);
+      }
+      return next;
+    });
+  };
+
+  const saveMessageToFirestore = async (_message: Message) => false;
+
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
 
     const userMessage = inputValue.trim();
     const newMessage: Message = { role: "user", text: userMessage };
 
-    // If not logged in, just local state
-    if (!user) {
-      setMessages(prev => [...prev, newMessage]);
-    } else {
-      // Save to Firestore
-      await addDoc(collection(db, "users", user.uid, "messages"), {
-        ...newMessage,
-        userId: user.uid,
-        timestamp: serverTimestamp()
-      });
-    }
-
     setInputValue("");
     setIsLoading(true);
 
-    const history = messages.map(m => ({
+    appendLocalMessage(newMessage);
+
+    const history = [...messages, newMessage].map(m => ({
       role: m.role,
       parts: [{ text: m.text }]
     }));
 
-    const response = await getChatResponse(userMessage, history);
-    const modelMessage: Message = { role: "model", text: response || "Xin lỗi, tôi không thể trả lời lúc này." };
+    try {
+      const response = await getChatResponse(userMessage, history);
+      const modelMessage: Message = { role: "model", text: response || "Xin lỗi, tôi không thể trả lời lúc này." };
 
-    if (!user) {
-      setMessages(prev => [...prev, modelMessage]);
-    } else {
-      // Save to Firestore
-      await addDoc(collection(db, "users", user.uid, "messages"), {
-        ...modelMessage,
-        userId: user.uid,
-        timestamp: serverTimestamp()
+      appendLocalMessage(modelMessage);
+
+    } catch (error) {
+      console.error("Handle send message failed", error);
+      appendLocalMessage({
+        role: "model",
+        text: "Xin lỗi, đã có lỗi xảy ra khi xử lý câu hỏi của bạn."
       });
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   };
 
   const handleGenerateImage = async (lawId: string) => {
