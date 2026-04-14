@@ -8,6 +8,22 @@ import React, {
 import HTMLFlipBook from "react-pageflip";
 
 const PAGE_RATIO = 1.5;
+const AUDIO_END_OFFSETS_MS = [
+  2000, // cover_start
+  0,    // page1
+  4200, // page2
+  0,    // page3
+  4600, // page4
+  0,    // page5
+  4000, // page6
+  0,    // page7
+  3700, // page8
+  0,    // page9
+  4000, // page10
+  0,    // page11
+  4100, // page12
+  0,    // cover_end = page13.mp3
+];
 
 const DEFAULT_PAGES = [
   { src: "/pages/cover_start.png", alt: "Bìa truyện", type: "cover" },
@@ -57,7 +73,7 @@ const DEFAULT_AUDIO_FILES = [
   "/audio/page10.mp3",
   "/audio/page11.mp3",
   "/audio/page12.mp3",
-  null,
+  "/audio/page13.mp3",
 ];
 
 const FlipBook = React.forwardRef((props = {}, ref) => {
@@ -106,14 +122,16 @@ const FlipBook = React.forwardRef((props = {}, ref) => {
     setIsPlaying?.(false);
   };
 
-  const getFlipDelayFromAudio = (audio) => {
-    if (!audio || !Number.isFinite(audio.duration) || audio.duration <= 0) {
-      return 2500;
-    }
+const getFlipDelayFromAudio = (audio, pageIndex) => {
+  if (!audio || !Number.isFinite(audio.duration) || audio.duration <= 0) {
+    return 2500;
+  }
 
-    const delay = Math.floor(audio.duration * 1000) ;
-    return Math.max(delay, 1000);
-  };
+  const endOffset = AUDIO_END_OFFSETS_MS[pageIndex] ?? 0;
+  const delay = Math.floor(audio.duration * 1000) - endOffset;
+
+  return Math.max(delay, 100);
+};
 
   const waitForAudioMetadata = (audio) =>
     new Promise((resolve) => {
@@ -174,7 +192,7 @@ const scheduleNextFlip = (delayMs, pageIndex) => {
       audio.load();
 
       await waitForAudioMetadata(audio);
-      const delayMs = getFlipDelayFromAudio(audio);
+      const delayMs = getFlipDelayFromAudio(audio, pageIndex);
 
       await audio.play();
       setIsPlaying?.(true);
@@ -214,6 +232,11 @@ const startAutoPlay = async () => {
 
   if (pageIndex < pages.length - 1) {
     scheduleNextFlip(result.delayMs, pageIndex);
+  } else {
+    clearAutoPlayTimer();
+    autoPlayTimeoutRef.current = setTimeout(() => {
+      stopAutoPlay();
+    }, Math.max(result?.delayMs ?? 0, 100));
   }
 };
 
@@ -290,12 +313,16 @@ const handleFlip = async (e) => {
 
   if (!isAutoPlay) return;
 
+  const result = await playAudioForPage(nextPage);
+
   if (nextPage >= pages.length - 1) {
-    stopAutoPlay();
+    clearAutoPlayTimer();
+    autoPlayTimeoutRef.current = setTimeout(() => {
+      stopAutoPlay();
+    }, Math.max(result?.delayMs ?? 0, 100));
     return;
   }
 
-  const result = await playAudioForPage(nextPage);
   scheduleNextFlip(result.delayMs, nextPage);
 };
 
