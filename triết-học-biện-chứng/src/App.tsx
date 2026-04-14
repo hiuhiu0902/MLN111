@@ -53,6 +53,7 @@ import {
 import { getChatResponse, generateImage } from "./lib/gemini";
 import { auth, googleProvider } from "./lib/firebase";
 import { signInWithPopup, signOut, onAuthStateChanged, User as FirebaseUser, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, sendPasswordResetEmail } from "firebase/auth";
+import FlipBook from "./FlipBook";
 
 interface Message {
   role: "user" | "model";
@@ -704,6 +705,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
               <a href="#overview" className="text-sm font-medium hover:text-primary transition-colors">Tổng quan</a>
               <a href="#principles" className="text-sm font-medium hover:text-primary transition-colors">Nguyên lý</a>
               <a href="#laws" className="text-sm font-medium hover:text-primary transition-colors">Quy luật</a>
+              <a href="#flipbook" className="text-sm font-medium hover:text-primary transition-colors">Flipbook</a>
               {/* <a href="#categories" className="text-sm font-medium hover:text-primary transition-colors">Phạm trù</a> */}
             </div>
 
@@ -816,6 +818,12 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
                     className={cn(buttonVariants({ size: "lg", variant: "default" }), "rounded-full px-10 h-14 text-base shadow-lg shadow-primary/20 flex items-center justify-center")}
                   >
                     Bắt đầu tìm hiểu <ArrowRight className="ml-2 w-5 h-5" />
+                  </a>
+                  <a
+                    href="#flipbook"
+                    className={cn(buttonVariants({ size: "lg", variant: "outline" }), "rounded-full px-10 h-14 text-base border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white backdrop-blur-sm")}
+                  >
+                    Mở Flipbook
                   </a>
                   <Button size="lg" variant="outline" className="rounded-full px-10 h-14 text-base border-primary/20 hover:bg-primary/5" onClick={() => setIsChatOpen(true)}>
                     Trò chuyện với AI
@@ -1122,7 +1130,44 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
         </section>
 
         {/* Categories Section */}
-        
+          
+        <section
+          id="flipbook"
+          className="py-32 bg-gradient-to-b from-background via-secondary/10 to-background dark:from-zinc-950 dark:via-zinc-900/50 dark:to-zinc-950 relative overflow-hidden"
+        >
+          <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(37,99,235,0.10),transparent_40%)]" />
+          <div className="container mx-auto px-4">
+            <div className="max-w-6xl mx-auto">
+              <div className="text-center mb-16">
+                <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/20 border-none rounded-full px-4">Flipbook tương tác</Badge>
+                <h2 className="text-4xl md:text-5xl mb-6 font-serif italic">Truyện tranh hóa ba quy luật cơ bản</h2>
+                <p className="text-muted-foreground max-w-3xl mx-auto text-lg font-light leading-relaxed">
+                  Một phiên bản kể chuyện trực quan giúp người học tiếp cận các quy luật cơ bản của phép biện chứng duy vật bằng hình ảnh, nhịp đọc và trải nghiệm lật trang tự nhiên.
+                </p>
+              </div>
+
+              <div className="mb-8 flex flex-wrap justify-center gap-4">
+                <a
+                  href="#flipbook-reader"
+                  className={cn(buttonVariants({ variant: "default", size: "lg" }), "rounded-full px-8 shadow-lg shadow-primary/20")}
+                >
+                  Đọc flipbook ngay
+                </a>
+                <a
+                  href="#laws"
+                  className={cn(buttonVariants({ variant: "outline", size: "lg" }), "rounded-full px-8 border-primary/20 hover:bg-primary/5")}
+                >
+                  Xem lại phần quy luật
+                </a>
+              </div>
+
+              <div id="flipbook-reader" className="rounded-[2rem] border border-primary/10 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md shadow-2xl shadow-primary/5 p-4 md:p-8">
+                <FlipBook />
+              </div>
+            </div>
+          </div>
+        </section>
+
         <section className="py-32 bg-white dark:bg-zinc-950 relative overflow-hidden">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
           <div className="container mx-auto px-4">
@@ -1173,6 +1218,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
               <a href="#overview" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Tổng quan</a>
               <a href="#principles" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Nguyên lý</a>
               <a href="#laws" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Quy luật</a>
+              <a href="#flipbook" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Flipbook</a>
               {/* <a href="#categories" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Phạm trù</a> */}
               <button onClick={() => setIsChatOpen(true)} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Trợ lý AI</button>
             </nav>
