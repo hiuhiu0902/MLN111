@@ -9,11 +9,11 @@ import HTMLFlipBook from "react-pageflip";
 
 const PAGE_RATIO = 1.5;
 const AUDIO_END_OFFSETS_MS = [
-  2000, // cover_start
+  0, // cover_start
   0,    // page1
   4200, // page2
   0,    // page3
-  4600, // page4
+  4700, // page4
   0,    // page5
   4000, // page6
   0,    // page7
