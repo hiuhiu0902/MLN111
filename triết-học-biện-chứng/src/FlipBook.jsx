@@ -13,9 +13,9 @@ const AUDIO_END_OFFSETS_MS = [
   0,    // page1
   4200, // page2
   0,    // page3
-  4700, // page4
+  4750, // page4
   0,    // page5
-  4000, // page6
+  4050, // page6
   0,    // page7
   3700, // page8
   0,    // page9

@@ -78,17 +78,6 @@ interface Law {
   imageUrl?: string;
 }
 
-interface Principle {
-  id: string;
-  title: string;
-  description: string;
-  detailedDefinition: string;
-  properties: string[];
-  detailedProperties: string;
-  meaning: string;
-  icon: React.ReactNode;
-}
-
 interface Category {
   id: string;
   title: string;
@@ -99,29 +88,6 @@ interface Category {
   example: string;
   icon: React.ReactNode;
 }
-
-const PRINCIPLES: Principle[] = [
-  {
-    id: "p1",
-    title: "Nguyên lý về mối liên hệ phổ biến",
-    description: "Chỉ sự tác động, quy định, chuyển hóa lẫn nhau giữa các sự vật, hiện tượng hoặc giữa các mặt bên trong của chúng.",
-    detailedDefinition: "Mối liên hệ là phạm trù triết học dùng để chỉ sự tác động, quy định, chuyển hóa lẫn nhau giữa các sự vật, hiện tượng hay giữa các mặt, các yếu tố bên trong của một sự vật.",
-    properties: ["Tính khách quan", "Tính phổ biến", "Tính đa dạng, phong phú"],
-    detailedProperties: "Có ba tính chất cơ bản là tính khách quan (vốn có của mọi sự vật), tính phổ biến (thể hiện trong mọi lĩnh vực tự nhiên, xã hội, tư duy) và tính đa dạng, phong phú (có nhiều loại liên hệ khác nhau như bên trong/bên ngoài, trực tiếp/gián tiếp, cơ bản/không cơ bản...).",
-    meaning: "Yêu cầu phải có quan điểm toàn diện (xem xét tất cả các mối liên hệ và phân loại chúng để tìm ra bản chất) và quan điểm lịch sử - cụ thể (đặt sự vật trong không gian, thời gian cụ thể) trong nhận thức và thực tiễn.",
-    icon: <Layers className="w-8 h-8 text-primary" />
-  },
-  {
-    id: "p2",
-    title: "Nguyên lý về sự phát triển",
-    description: "Quá trình vận động tiến lên: từ thấp đến cao, từ đơn giản đến phức tạp, từ kém hoàn thiện đến hoàn thiện hơn.",
-    detailedDefinition: "Phát triển là quá trình vận động tiến lên của sự vật: từ thấp lên cao, từ đơn giản đến phức tạp, từ kém hoàn thiện đến hoàn thiện hơn. Phát triển là quá trình biến đổi về chất theo hướng ngày càng hoàn thiện, khác với sự tăng trưởng đơn thuần.",
-    properties: ["Tính khách quan", "Tính phổ biến", "Tính đa dạng, phong phú"],
-    detailedProperties: "Mang tính khách quan (do quy luật khách quan chi phối), tính phổ biến (diễn ra ở mọi lĩnh vực) và tính phong phú, đa dạng (không hoàn toàn giống nhau ở những không gian, thời gian khác nhau).",
-    meaning: "Đòi hỏi quan điểm phát triển, tức là phải luôn đặt sự vật trong khuynh hướng vận động, biến đổi để phát hiện xu hướng; biết phát hiện và ủng hộ cái mới, chống bảo thủ, trì trệ; đồng thời biết kế thừa yếu tố tích cực từ cái cũ.",
-    icon: <RefreshCw className="w-8 h-8 text-primary" />
-  }
-];
 
 const CATEGORIES: Category[] = [
   {
@@ -189,7 +155,6 @@ const CATEGORIES: Category[] = [
 const FEATURE_IMAGES = {
   hero: "https://images.unsplash.com/photo-1516979187457-637abb4f9353?auto=format&fit=crop&w=1400&q=80",
   overview: "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=1200&q=80",
-  principles: "https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=1200&q=80",
   // categories: "https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=1200&q=80"
 };
 
@@ -265,7 +230,6 @@ export default function App() {
   const [newDisplayName, setNewDisplayName] = useState("");
   const [newPhotoURL, setNewPhotoURL] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  const [selectedPrinciple, setSelectedPrinciple] = useState<Principle | null>(null);
   const [isCloudChatEnabled, setIsCloudChatEnabled] = useState(true);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -352,7 +316,6 @@ export default function App() {
     });
     return () => unsubscribe();
   }, []);
-
 
   const resetAuthForm = () => {
     setEmail("");
@@ -478,7 +441,6 @@ export default function App() {
       setIsAuthSubmitting(false);
     }
   };
-
 
   const handleForgotPassword = async () => {
     const normalizedEmail = email.trim().toLowerCase();
@@ -703,8 +665,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
           <div className="hidden md:flex items-center gap-6">
             <div className="flex items-center gap-6 mr-4 border-r pr-6">
               <a href="#overview" className="text-sm font-medium hover:text-primary transition-colors">Tổng quan</a>
-              <a href="#principles" className="text-sm font-medium hover:text-primary transition-colors">Nguyên lý</a>
-              <a href="#laws" className="text-sm font-medium hover:text-primary transition-colors">Quy luật</a>
+                            <a href="#laws" className="text-sm font-medium hover:text-primary transition-colors">Quy luật</a>
               <a href="#flipbook" className="text-sm font-medium hover:text-primary transition-colors">Flipbook</a>
               {/* <a href="#categories" className="text-sm font-medium hover:text-primary transition-colors">Phạm trù</a> */}
             </div>
@@ -765,7 +726,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
         </div>
       </nav>
 
-      <main className="flex-1">
+      <main className="flex-1 overflow-x-hidden">
         {/* Hero Section */}
         <section
           id="intro"
@@ -781,7 +742,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
           {/* Giữ nguyên hiệu ứng hạt lá lơi nhưng giảm opacity để không lấn át ảnh nền */}
           <PhilosophicalParticles density={25} className="-z-10 opacity-50" />
 
-          <div className="container mx-auto px-4 relative z-10">
+          <div className="container mx-auto px-4 md:px-6 relative z-10">
             <div className="max-w-5xl mx-auto text-center">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -842,8 +803,8 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
           {/* Lớp phủ chuyển sắc từ trên xuống dưới */}
           <div className="absolute inset-0 bg-gradient-to-b from-white/90 to-white/70 dark:from-zinc-950/90 dark:to-zinc-950/80 backdrop-blur-md -z-10" />
 
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="grid md:grid-cols-2 gap-16 items-center max-w-6xl mx-auto">
+          <div className="container mx-auto px-4 md:px-6 relative z-10">
+            <div className="grid md:grid-cols-2 gap-12 lg:gap-16 items-center max-w-5xl mx-auto">
               <div>
                 <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/20 border-none rounded-full px-4">Tổng quan</Badge>
                 <h2 className="text-4xl md:text-5xl font-serif italic mb-8">Khái niệm & Đặc điểm</h2>
@@ -890,10 +851,6 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
                   </div>
                   <h4 className="text-2xl font-serif italic mb-6">Cấu trúc nội dung cốt lõi</h4>
                   <div className="grid grid-cols-1 gap-4">
-                    <div className="flex items-center justify-between p-4 bg-white dark:bg-zinc-800 rounded-2xl shadow-sm">
-                      <span className="font-medium">Nguyên lý cơ bản</span>
-                      <Badge variant="secondary" className="rounded-full">02</Badge>
-                    </div>
                       {/* <div className="flex items-center justify-between p-4 bg-white dark:bg-zinc-800 rounded-2xl shadow-sm">
                         <span className="font-medium">Cặp phạm trù</span>
                         <Badge variant="secondary" className="rounded-full">06</Badge>
@@ -908,112 +865,6 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
             </div>
           </div>
         </section>
-
-        {/* Principles Section */}
-        <section id="principles" className="py-32 bg-secondary/10 dark:bg-zinc-900/30 overflow-hidden">
-          <div className="container mx-auto px-4">
-            <div className="max-w-4xl mx-auto mb-20">
-              <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/20 border-none rounded-full px-4">Chuyên mục 1</Badge>
-              <h2 className="text-5xl md:text-6xl font-serif italic mb-8">Hai Nguyên Lý Cơ Bản</h2>
-              <div className="p-8 bg-white dark:bg-zinc-900 rounded-[2rem] border border-primary/5 shadow-xl shadow-primary/5">
-                <p className="text-xl md:text-2xl text-muted-foreground font-light leading-relaxed italic">
-                  "Nguyên lý" được hiểu như các tiên đề trong khoa học cụ thể, là những tri thức không dễ chứng minh nhưng đã được xác nhận bởi thực tiễn của nhiều thế hệ con người, đòi hỏi con người phải tuân thủ nghiêm ngặt để không mắc sai lầm.
-                </p>
-              </div>
-            </div>
-
-            <div className="max-w-5xl mx-auto mb-10 overflow-hidden rounded-[2.5rem] border border-primary/10 bg-white dark:bg-zinc-900 shadow-xl shadow-primary/5">
-              <img src={FEATURE_IMAGES.principles} alt="Không gian thư viện và tri thức" className="h-56 md:h-72 w-full object-cover" />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-              {PRINCIPLES.map((p, index) => (
-                <Dialog key={p.id}>
-                  <DialogTrigger
-                    render={
-                      <motion.button
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: index * 0.1 }}
-                        whileHover={{ scale: 1.02, y: -5 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => setSelectedPrinciple(p)}
-                        className="group relative aspect-square rounded-[3rem] bg-white dark:bg-zinc-900 p-10 shadow-2xl shadow-primary/5 border border-primary/5 flex flex-col items-center justify-center text-center transition-all duration-500 hover:border-primary/20"
-                      >
-                        <div className="w-24 h-24 rounded-3xl bg-primary/5 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
-                          {p.icon}
-                        </div>
-                        <h3 className="text-3xl font-serif italic mb-4">{p.title}</h3>
-                        <p className="text-muted-foreground text-lg font-light leading-relaxed max-w-xs">
-                          {p.description}
-                        </p>
-                        <div className="mt-8 flex items-center gap-2 text-primary font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                          Xem chi tiết <ArrowRight className="w-5 h-5" />
-                        </div>
-                      </motion.button>
-                    }
-                  />
-                  <DialogContent className="sm:max-w-[650px] rounded-[3rem] p-0 overflow-hidden border-none bg-transparent shadow-none">
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="bg-white dark:bg-zinc-950 p-6 md:p-12 rounded-[3rem] border border-primary/10 shadow-2xl max-h-[90vh] overflow-y-auto"
-                    >
-                      <DialogHeader className="mb-8">
-                        <div className="flex items-center gap-4 mb-4">
-                          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                            {p.icon}
-                          </div>
-                          <Badge variant="outline" className="border-primary/20 text-primary">Nguyên lý {index + 1}</Badge>
-                        </div>
-                        <DialogTitle className="text-4xl font-serif italic leading-tight">
-                          {p.title}
-                        </DialogTitle>
-                      </DialogHeader>
-
-                      <div className="space-y-8">
-                        <div className="space-y-3">
-                          <h5 className="text-[10px] font-mono uppercase tracking-[0.3em] text-primary opacity-60">Khái niệm</h5>
-                          <p className="text-lg leading-relaxed text-zinc-800 dark:text-zinc-200 font-light">
-                            {p.detailedDefinition}
-                          </p>
-                        </div>
-
-                        <div className="space-y-3">
-                          <h5 className="text-[10px] font-mono uppercase tracking-[0.3em] text-primary opacity-60">Tính chất</h5>
-                          <p className="text-lg leading-relaxed text-zinc-600 dark:text-zinc-400">
-                            {p.detailedProperties}
-                          </p>
-                        </div>
-
-                        <div className="p-8 bg-primary/5 dark:bg-primary/10 rounded-[2.5rem] border border-primary/10">
-                          <h5 className="text-[10px] font-mono uppercase tracking-[0.3em] text-primary opacity-60 mb-4">Ý nghĩa phương pháp luận</h5>
-                          <p className="italic font-serif text-xl leading-relaxed text-primary/90">
-                            {p.meaning}
-                          </p>
-                        </div>
-                      </div>
-
-                      <DialogFooter className="mt-10">
-                        <Button
-                          variant="outline"
-                          className="rounded-full px-8 h-12 border-primary/20 hover:bg-primary/5"
-                          onClick={() => {
-                            const closeButton = document.querySelector('[data-radix-collection-item]') as HTMLElement;
-                            closeButton?.click();
-                          }}
-                        >
-                          Đóng lại
-                        </Button>
-                      </DialogFooter>
-                    </motion.div>
-                  </DialogContent>
-                </Dialog>
-              ))}
-            </div>
-          </div>
-        </section>
         <section
           id="laws"
           className="py-32 relative z-10 bg-fixed bg-center bg-cover"
@@ -1022,7 +873,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
           {/* Lớp phủ màu đậm và làm mờ sâu */}
           <div className="absolute inset-0 bg-secondary/80 dark:bg-zinc-900/90 backdrop-blur-lg -z-10" />
 
-          <div className="container mx-auto px-4 relative z-10">
+          <div className="container mx-auto px-4 md:px-6 relative z-10">
             <div className="text-center mb-20">
               <h2 className="text-4xl md:text-5xl mb-6 font-serif italic">Hệ thống Quy luật</h2>
               <div className="w-20 h-1 bg-primary mx-auto mb-6 rounded-full" />
@@ -1031,7 +882,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
               </p>
             </div>
 
-            <Tabs defaultValue="law1" className="w-full max-w-6xl mx-auto">
+            <Tabs defaultValue="law1" className="w-full max-w-5xl mx-auto">
               <TabsList className="flex flex-wrap md:grid w-full md:grid-cols-3 h-auto p-2 bg-white/50 dark:bg-zinc-800/50 backdrop-blur-sm border border-primary/10 rounded-2xl mb-12">
                 {laws.map((law) => (
                   <TabsTrigger
@@ -1136,8 +987,8 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
           className="py-32 bg-gradient-to-b from-background via-secondary/10 to-background dark:from-zinc-950 dark:via-zinc-900/50 dark:to-zinc-950 relative overflow-hidden"
         >
           <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,rgba(37,99,235,0.10),transparent_40%)]" />
-          <div className="container mx-auto px-4">
-            <div className="max-w-6xl mx-auto">
+          <div className="container mx-auto px-4 md:px-6">
+            <div className="max-w-5xl mx-auto">
               <div className="text-center mb-16">
                 <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/20 border-none rounded-full px-4">Flipbook tương tác</Badge>
                 <h2 className="text-4xl md:text-5xl mb-6 font-serif italic">Truyện tranh hóa ba quy luật cơ bản</h2>
@@ -1170,7 +1021,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
 
         <section className="py-32 bg-white dark:bg-zinc-950 relative overflow-hidden">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
-          <div className="container mx-auto px-4">
+          <div className="container mx-auto px-4 md:px-6">
             <div className="max-w-5xl mx-auto">
               <div className="text-center mb-20">
                 <h2 className="text-4xl md:text-5xl mb-6 font-serif italic">Giá trị cốt lõi</h2>
@@ -1206,7 +1057,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
 
       <footer className="py-20 border-t bg-white dark:bg-zinc-950 relative overflow-hidden">
         <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_bottom,var(--color-primary)_0%,transparent_70%)] opacity-[0.02]" />
-        <div className="container mx-auto px-4">
+        <div className="container mx-auto px-4 md:px-6">
           <div className="flex flex-col items-center text-center">
             <div className="flex items-center gap-3 mb-8">
               <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
@@ -1216,8 +1067,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
             </div>
             <nav className="flex flex-wrap justify-center gap-8 mb-12">
               <a href="#overview" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Tổng quan</a>
-              <a href="#principles" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Nguyên lý</a>
-              <a href="#laws" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Quy luật</a>
+                            <a href="#laws" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Quy luật</a>
               <a href="#flipbook" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Flipbook</a>
               {/* <a href="#categories" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Phạm trù</a> */}
               <button onClick={() => setIsChatOpen(true)} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Trợ lý AI</button>
