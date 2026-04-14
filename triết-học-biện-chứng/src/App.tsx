@@ -189,7 +189,7 @@ const FEATURE_IMAGES = {
   hero: "https://images.unsplash.com/photo-1516979187457-637abb4f9353?auto=format&fit=crop&w=1400&q=80",
   overview: "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=1200&q=80",
   principles: "https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=1200&q=80",
-  categories: "https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=1200&q=80"
+  // categories: "https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=1200&q=80"
 };
 
 const PhilosophicalParticles = ({ density = 20, className = "" }: { density?: number; className?: string }) => {
@@ -704,7 +704,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
               <a href="#overview" className="text-sm font-medium hover:text-primary transition-colors">Tổng quan</a>
               <a href="#principles" className="text-sm font-medium hover:text-primary transition-colors">Nguyên lý</a>
               <a href="#laws" className="text-sm font-medium hover:text-primary transition-colors">Quy luật</a>
-              <a href="#categories" className="text-sm font-medium hover:text-primary transition-colors">Phạm trù</a>
+              {/* <a href="#categories" className="text-sm font-medium hover:text-primary transition-colors">Phạm trù</a> */}
             </div>
 
             <div className="flex items-center gap-3">
@@ -886,10 +886,10 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
                       <span className="font-medium">Nguyên lý cơ bản</span>
                       <Badge variant="secondary" className="rounded-full">02</Badge>
                     </div>
-                    <div className="flex items-center justify-between p-4 bg-white dark:bg-zinc-800 rounded-2xl shadow-sm">
-                      <span className="font-medium">Cặp phạm trù</span>
-                      <Badge variant="secondary" className="rounded-full">06</Badge>
-                    </div>
+                      {/* <div className="flex items-center justify-between p-4 bg-white dark:bg-zinc-800 rounded-2xl shadow-sm">
+                        <span className="font-medium">Cặp phạm trù</span>
+                        <Badge variant="secondary" className="rounded-full">06</Badge>
+                      </div> */}
                     <div className="flex items-center justify-between p-4 bg-white dark:bg-zinc-800 rounded-2xl shadow-sm">
                       <span className="font-medium">Quy luật cơ bản</span>
                       <Badge variant="secondary" className="rounded-full">03</Badge>
@@ -1122,132 +1122,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
         </section>
 
         {/* Categories Section */}
-        <section
-          id="categories"
-          className="py-32 relative z-10 bg-center bg-cover overflow-hidden"
-          style={{ backgroundImage: 'url("/images/Section4.png")' }}
-        >
-          {/* Lớp kính mờ mạnh nhất (backdrop-blur-xl) */}
-          <div className="absolute inset-0 bg-white/70 dark:bg-zinc-950/80 backdrop-blur-xl -z-10" />
-
-          <div className="container mx-auto px-4 relative z-10">
-            <div className="flex flex-col md:flex-row md:items-end justify-between mb-20 gap-8">
-              <div className="max-w-2xl">
-                <Badge className="mb-4 bg-primary/10 text-primary hover:bg-primary/20 border-none rounded-full px-4">Phạm trù</Badge>
-                <h2 className="text-5xl md:text-6xl font-serif italic mb-6">Sáu Cặp Phạm Trù</h2>
-                <p className="text-muted-foreground text-xl font-light leading-relaxed">
-                  Khám phá các mối liên hệ phổ biến nhất thông qua giao diện tương tác hiện đại.
-                </p>
-              </div>
-              <div className="hidden lg:block text-right">
-                <div className="text-8xl font-serif italic opacity-5 text-primary leading-none">06</div>
-                <div className="text-sm font-mono uppercase tracking-widest opacity-40">Interactive Categories</div>
-              </div>
-            </div>
-
-            <div className="max-w-5xl mx-auto mb-10 overflow-hidden rounded-[2.5rem] border border-primary/10 bg-secondary/10 dark:bg-zinc-900/50 shadow-xl shadow-primary/5">
-              <img src={FEATURE_IMAGES.categories} alt="Bút viết và tri thức" className="h-56 md:h-72 w-full object-cover" />
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8 max-w-5xl mx-auto">
-              {CATEGORIES.map((cat, index) => (
-                <Dialog key={cat.id}>
-                  <DialogTrigger
-                    render={
-                      <motion.button
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: index * 0.05 }}
-                        whileHover={{ scale: 1.05, y: -5 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => setSelectedCategory(cat)}
-                        className="group relative aspect-square rounded-[2.5rem] bg-secondary/10 dark:bg-zinc-900/50 border border-primary/5 flex flex-col items-center justify-center p-6 transition-all duration-500 hover:bg-primary hover:shadow-2xl hover:shadow-primary/20"
-                      >
-                        <div className="w-16 h-16 rounded-2xl bg-primary/10 group-hover:bg-white/20 flex items-center justify-center mb-6 transition-colors">
-                          <div className="text-primary group-hover:text-white transition-colors scale-125">
-                            {cat.icon}
-                          </div>
-                        </div>
-                        <span className="text-lg md:text-xl font-serif italic text-center group-hover:text-white transition-colors">
-                          {cat.title}
-                        </span>
-
-                        {/* Decorative elements */}
-                        <div className="absolute top-4 right-6 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <ArrowRight className="w-5 h-5 text-white" />
-                        </div>
-                      </motion.button>
-                    }
-                  />
-                  <DialogContent className="sm:max-w-[600px] rounded-[3rem] p-0 overflow-hidden border-none bg-transparent shadow-none">
-                    <motion.div
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="bg-white dark:bg-zinc-950 p-6 md:p-12 rounded-[3rem] border border-primary/10 shadow-2xl max-h-[90vh] overflow-y-auto"
-                    >
-                      <DialogHeader className="mb-8">
-                        <div className="flex items-center gap-4 mb-4">
-                          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                            {cat.icon}
-                          </div>
-                          <Badge variant="outline" className="border-primary/20 text-primary">Phạm trù {index + 1}</Badge>
-                        </div>
-                        <DialogTitle className="text-4xl font-serif italic leading-tight">
-                          {cat.title}
-                        </DialogTitle>
-                      </DialogHeader>
-
-                      <div className="space-y-8">
-                        <div className="space-y-3">
-                          <h5 className="text-[10px] font-mono uppercase tracking-[0.3em] text-primary opacity-60">Khái niệm chi tiết</h5>
-                          <p className="text-lg leading-relaxed text-zinc-800 dark:text-zinc-200 font-light">
-                            {cat.detailedDefinition}
-                          </p>
-                        </div>
-
-                        <div className="space-y-3">
-                          <h5 className="text-[10px] font-mono uppercase tracking-[0.3em] text-primary opacity-60">Mối quan hệ biện chứng</h5>
-                          <p className="text-lg leading-relaxed text-zinc-600 dark:text-zinc-400">
-                            {cat.relationship}
-                          </p>
-                        </div>
-
-                        <div className="grid md:grid-cols-2 gap-6">
-                          <div className="p-6 bg-secondary/30 dark:bg-zinc-900/50 rounded-[2rem] border border-primary/5">
-                            <h5 className="text-[10px] font-mono uppercase tracking-[0.3em] text-primary opacity-60 mb-3">Ý nghĩa phương pháp luận</h5>
-                            <p className="italic font-serif text-lg leading-relaxed">
-                              {cat.meaning}
-                            </p>
-                          </div>
-                          <div className="p-6 bg-primary/5 dark:bg-primary/10 rounded-[2rem] border border-primary/10">
-                            <h5 className="text-[10px] font-mono uppercase tracking-[0.3em] text-primary opacity-60 mb-3">Ví dụ thực tiễn</h5>
-                            <p className="text-lg leading-relaxed font-light">
-                              {cat.example}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <DialogFooter className="mt-10">
-                        <Button
-                          variant="outline"
-                          className="rounded-full px-8 h-12 border-primary/20 hover:bg-primary/5"
-                          onClick={() => {
-                            const closeButton = document.querySelector('[data-radix-collection-item]') as HTMLElement;
-                            closeButton?.click();
-                          }}
-                        >
-                          Đóng lại
-                        </Button>
-                      </DialogFooter>
-                    </motion.div>
-                  </DialogContent>
-                </Dialog>
-              ))}
-            </div>
-          </div>
-        </section>
+        
         <section className="py-32 bg-white dark:bg-zinc-950 relative overflow-hidden">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
           <div className="container mx-auto px-4">
@@ -1298,7 +1173,7 @@ Quy luật này chỉ ra **khuynh hướng** phát triển: tiến lên theo chu
               <a href="#overview" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Tổng quan</a>
               <a href="#principles" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Nguyên lý</a>
               <a href="#laws" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Quy luật</a>
-              <a href="#categories" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Phạm trù</a>
+              {/* <a href="#categories" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Phạm trù</a> */}
               <button onClick={() => setIsChatOpen(true)} className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">Trợ lý AI</button>
             </nav>
             <Separator className="max-w-xs mx-auto mb-12 opacity-50" />
